@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from src.Controllers.AI_controller import AIController
 from src.Utils.Interface.IModels import (
     ChatRequest,
     ChatResponse,
     AnalyzeCVRequest,
-    GenerateJobDescriptionRequest
+    GenerateJobDescriptionRequest,
+    ExtractTextResponse
 )
 
 ai_router = APIRouter(prefix="", tags=["AI"])
@@ -134,4 +135,43 @@ async def generate_job_description(request: GenerateJobDescriptionRequest):
     Génère une description de poste optimisée et professionnelle
     """
     return await AIController.generate_job_description(request)
+
+
+@ai_router.post(
+    "/extract-text",
+    response_model=ExtractTextResponse,
+    summary="Extraire le texte d'un fichier",
+    description="""
+    Extrait le texte d'un fichier PDF, DOCX ou TXT.
+    
+    Formats supportés:
+    - PDF (.pdf)
+    - Word (.docx)
+    - Texte (.txt)
+    
+    Taille maximale: 10MB
+    """,
+    responses={
+        200: {
+            "description": "Texte extrait avec succès",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "text": "John Doe\nDéveloppeur Full Stack\n5 ans d'expérience...",
+                        "file_name": "cv.pdf",
+                        "file_type": "pdf",
+                        "character_count": 1234
+                    }
+                }
+            }
+        },
+        400: {"description": "Format non supporté ou fichier invalide"},
+        500: {"description": "Erreur lors de l'extraction"},
+    }
+)
+async def extract_text(file: UploadFile = File(...)):
+    """
+    Extrait le texte d'un fichier (PDF, DOCX, TXT)
+    """
+    return await AIController.extract_text(file)
 
