@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.Routes.AI.routes import ai_router
+from src.Routes.AI_routes import ai_router
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 

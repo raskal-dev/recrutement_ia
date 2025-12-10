@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from src.Controllers.AI.controller import AIController
+from src.Controllers.AI_controller import AIController
 from src.Utils.Interface.IModels import (
     ChatRequest,
     ChatResponse,

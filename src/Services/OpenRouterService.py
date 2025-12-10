@@ -1,6 +1,6 @@
 import httpx
 from typing import List, Optional
-from src.Configs.OpenRouter.config import OPENROUTER_API_KEY, OPENROUTER_API_URL, FREE_MODELS, APP_URL
+from src.Configs.OpenRouter_config import OPENROUTER_API_KEY, OPENROUTER_API_URL, FREE_MODELS, APP_URL
 from src.Utils.BaseError import BaseError
 from src.Utils.Interface.IModels import ChatRequest, ChatMessage
 

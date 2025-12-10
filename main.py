@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from src.Routes.index import router
 from src.Middlewares.CORS import setup_cors
-from src.Configs.OpenRouter.config import FREE_MODELS
+from src.Configs.OpenRouter_config import FREE_MODELS
+import os
 
 app = FastAPI(
     title="Recrutement IA Service",
@@ -16,11 +17,11 @@ app = FastAPI(
     
     ## Modèles disponibles
     
-    Les modèles gratuits suivants sont disponibles :
-    * google/gemini-flash-1.5-8b:free
-    * meta-llama/llama-3.2-3b-instruct:free
-    * mistralai/mistral-7b-instruct:free
-    * qwen/qwen-2.5-7b-instruct:free
+    Modèles gratuits disponibles :
+    * qwen/qwen3-coder:free
+    * qwen/qwen3-235b-a22b:free
+    * nousresearch/hermes-3-llama-3.1-405b:free
+    * openai/gpt-oss-120b:free
     """,
     version="1.0.0",
     contact={
@@ -48,6 +49,17 @@ setup_cors(app)
 
 # Inclusion des routes
 app.include_router(router)
+
+INTERNAL_TOKEN = os.getenv("AI_INTERNAL_TOKEN")
+
+@app.middleware("http")
+async def verify_internal_token(request: Request, call_next):
+    # Seul le backend principal est autorisé à appeler les routes IA
+    if request.url.path.startswith("/ai"):
+        header_token = request.headers.get("x-internal-token")
+        if not INTERNAL_TOKEN or header_token != INTERNAL_TOKEN:
+            raise HTTPException(status_code=401, detail="Accès IA non autorisé")
+    return await call_next(request)
 
 
 @app.get(
