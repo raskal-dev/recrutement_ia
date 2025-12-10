@@ -87,3 +87,21 @@ class GenerateJobDescriptionRequest(BaseModel):
             }
         }
 
+
+class ExtractTextResponse(BaseModel):
+    """Réponse pour l'extraction de texte depuis un fichier"""
+    text: str = Field(..., description="Texte extrait du fichier", example="John Doe\nDéveloppeur Full Stack\n...")
+    file_name: str = Field(..., description="Nom du fichier", example="cv.pdf")
+    file_type: str = Field(..., description="Type de fichier", example="pdf")
+    character_count: int = Field(..., description="Nombre de caractères extraits", example=1234)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "text": "John Doe\nDéveloppeur Full Stack\n5 ans d'expérience...",
+                "file_name": "cv.pdf",
+                "file_type": "pdf",
+                "character_count": 1234
+            }
+        }
+
