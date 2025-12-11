@@ -1,20 +1,34 @@
 import httpx
+import os
+import logging
 from typing import List, Optional
 from src.Configs.OpenRouter_config import OPENROUTER_API_KEY, OPENROUTER_API_URL, FREE_MODELS, APP_URL
 from src.Utils.BaseError import BaseError
 from src.Utils.Interface.IModels import ChatRequest, ChatMessage
+from src.Services.OpenAIService import OpenAIService
 
 
 class OpenRouterService:
     @staticmethod
     async def chat(request: ChatRequest) -> dict:
         """
-        Envoie une requête de chat à OpenRouter
+        Tente OpenAI (si clé dispo), sinon fallback OpenRouter
         """
+        openai_key = os.getenv("OPENAI_API_KEY")
+
+        # 1) Tentative OpenAI si clé présente
+        if openai_key:
+            try:
+                return await OpenAIService.chat(request)
+            except BaseError as e:
+                logging.warning(f"OpenAI indisponible ({e.message}), fallback OpenRouter")
+            except Exception as e:
+                logging.warning(f"OpenAI erreur inattendue ({e}), fallback OpenRouter")
+
+        # 2) Fallback OpenRouter
         if not OPENROUTER_API_KEY:
             raise BaseError("OPENROUTER_API_KEY n'est pas configurée", 500)
 
-        # Utiliser le modèle spécifié ou le premier modèle gratuit par défaut
         model = request.model or FREE_MODELS[0]
 
         headers = {
