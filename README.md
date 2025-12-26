@@ -13,9 +13,9 @@ Recrutement_ia/
 ├── README.md              # Documentation
 └── src/
     ├── Configs/          # Configurations (OpenRouter, etc.)
-    │   └── OpenRouter.config.py
+    │   └── OpenRouter_config.py
     ├── Controllers/       # Contrôleurs (logique métier)
-    │   └── AI.controller.py
+    │   └── AI_controller.py
     ├── Middlewares/       # Middlewares (CORS, etc.)
     │   └── CORS.py
     ├── Routes/            # Routes API
@@ -48,20 +48,22 @@ pip install -r requirements.txt
 ## Configuration
 
 1. Copier `.env.example` vers `.env`
-2. Ajouter votre clé API OpenRouter dans `.env`:
+2. Ajouter votre clé API OpenRouter et le jeton interne dans `.env`:
    ```
    OPENROUTER_API_KEY=your_key_here
    APP_URL=http://localhost:8000
    ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+   AI_INTERNAL_TOKEN=change_me_securely
    ```
 
 ## Lancer le service
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Le service sera disponible sur `http://localhost:8000`
+Le service sera disponible sur `http://localhost:8000` (docs: `/docs`).
+Le backend Express doit appeler ce service en ajoutant l'en-tête `x-internal-token` avec la valeur de `AI_INTERNAL_TOKEN`.
 
 Documentation API disponible sur `http://localhost:8000/docs`
 
@@ -70,9 +72,9 @@ Documentation API disponible sur `http://localhost:8000/docs`
 - `GET /` - Informations sur le service
 - `GET /health` - Vérification de santé
 - `GET /models` - Liste des modèles disponibles
-- `POST /ai/chat` - Chat avec l'IA
-- `POST /ai/analyze-cv` - Analyse de CV
-- `POST /ai/generate-job-description` - Génération de description de poste
+- `POST /ai/chat` - Chat avec l'IA (protégé par `x-internal-token`)
+- `POST /ai/analyze-cv` - Analyse de CV (protégé)
+- `POST /ai/generate-job-description` - Génération de description de poste (protégé)
 
 ## Architecture
 
@@ -88,5 +90,9 @@ Le service FastAPI suit la même structure que le backend Express :
 ## Notes
 
 - Le service utilise OpenRouter pour accéder aux modèles IA gratuits
-- Les modèles par défaut sont configurés dans `src/Configs/OpenRouter.config.py`
+- Les modèles gratuits par défaut (ordre de priorité) sont configurés dans `src/Configs/OpenRouter_config.py` :
+  - `qwen/qwen3-coder:free`
+  - `qwen/qwen3-235b-a22b:free`
+  - `nousresearch/hermes-3-llama-3.1-405b:free`
+  - `openai/gpt-oss-120b:free`
 - Le backend Express fait un proxy vers ce service pour l'authentification et la sécurité
