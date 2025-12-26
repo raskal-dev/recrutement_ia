@@ -3,6 +3,7 @@ import os
 import logging
 from typing import List, Optional
 from src.Configs.OpenRouter_config import OPENROUTER_API_KEY, OPENROUTER_API_URL, FREE_MODELS, APP_URL
+from src.Configs.AI_config import PROTECTIVE_SYSTEM_PROMPT
 from src.Utils.BaseError import BaseError
 from src.Utils.Interface.IModels import ChatRequest, ChatMessage
 from src.Services.OpenAIService import OpenAIService
@@ -15,6 +16,16 @@ class OpenRouterService:
         Tente OpenAI (si clé dispo), sinon fallback OpenRouter
         """
         openai_key = os.getenv("OPENAI_API_KEY")
+
+        # Injection du prompt de protection s'il n'est pas déjà présent
+        has_system_prompt = any(msg.role == "system" for msg in request.messages)
+        if not has_system_prompt:
+            request.messages.insert(0, ChatMessage(role="system", content=PROTECTIVE_SYSTEM_PROMPT))
+        else:
+            # On renforce le prompt système existant
+            for msg in request.messages:
+                if msg.role == "system":
+                    msg.content = f"{PROTECTIVE_SYSTEM_PROMPT}\n\nContexte additionnel : {msg.content}"
 
         # 1) Tentative OpenAI si clé présente
         if openai_key:
@@ -76,11 +87,13 @@ class OpenRouterService:
         """
         Analyse un CV et le compare avec une description de poste
         """
+        system_content = (
+            f"{PROTECTIVE_SYSTEM_PROMPT}\n\n"
+            "Tu es un expert en recrutement. Analyse les CVs de manière professionnelle et objective."
+        )
+        
         messages = [
-            ChatMessage(
-                role="system",
-                content="Tu es un expert en recrutement. Analyse les CVs et fournis des insights pertinents."
-            ),
+            ChatMessage(role="system", content=system_content),
             ChatMessage(
                 role="user",
                 content=f"Analyse ce CV:\n\n{cv_text}\n\n"
@@ -103,11 +116,13 @@ class OpenRouterService:
         """
         Génère une description de poste optimisée
         """
+        system_content = (
+            f"{PROTECTIVE_SYSTEM_PROMPT}\n\n"
+            "Tu es un expert en rédaction de descriptions de poste. Crée des descriptions claires et attractives."
+        )
+        
         messages = [
-            ChatMessage(
-                role="system",
-                content="Tu es un expert en rédaction de descriptions de poste. Crée des descriptions claires et attractives."
-            ),
+            ChatMessage(role="system", content=system_content),
             ChatMessage(
                 role="user",
                 content=f"Génère une description de poste pour:\n"

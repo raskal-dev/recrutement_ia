@@ -3,6 +3,7 @@ from typing import List, Optional
 from openai import AsyncOpenAI
 from src.Utils.Interface.IModels import ChatMessage, ChatRequest
 from src.Utils.BaseError import BaseError
+from src.Configs.AI_config import PROTECTIVE_SYSTEM_PROMPT
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -19,8 +20,19 @@ class OpenAIService:
     @staticmethod
     async def chat(request: ChatRequest) -> dict:
         """
-        Envoie une requête de chat à OpenAI.
+        Envoie une requête de chat à OpenAI avec protection du domaine.
         """
+        # Injection du prompt de protection s'il n'est pas déjà présent
+        has_system_prompt = any(msg.role == "system" for msg in request.messages)
+        if not has_system_prompt:
+            request.messages.insert(0, ChatMessage(role="system", content=PROTECTIVE_SYSTEM_PROMPT))
+        else:
+            # On renforce le prompt système existant
+            for msg in request.messages:
+                if msg.role == "system":
+                    if PROTECTIVE_SYSTEM_PROMPT not in msg.content:
+                        msg.content = f"{PROTECTIVE_SYSTEM_PROMPT}\n\nContexte additionnel : {msg.content}"
+
         client = OpenAIService._get_client()
         try:
             completion = await client.chat.completions.create(
@@ -35,8 +47,6 @@ class OpenAIService:
                 "model": OPENAI_MODEL,
                 "usage": completion.usage.dict() if hasattr(completion, "usage") else None,
             }
-        except BaseError:
-            raise
         except Exception as e:
             raise BaseError(str(e), 503)
 
